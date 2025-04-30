@@ -7,7 +7,7 @@ def search_prod(query):
     params = {
         "engine": "google_shopping",
         "q": query,
-        "api_key": "4e9f647b16dfb41ea8f762ea32fcdd25d104382d9e1fed6b7c9bcbc06e770570",  # Replace with your actual API key
+        "api_key": "e71a0c7217eca0d5e490c9db2feca84a47253ce6b3a0d19195eaabd2a888d488",  # Replace with your actual API key
         "tbm": "shop",
         "gl": "in"
     }
@@ -28,23 +28,31 @@ def filter_products(results, max_price):
     for product in results:
         title = product.get("title")
         price = product.get("price")
+        print(f"Product: {title}")
+        print(f"Raw Price: {price}")
+
         link = product.get("product_link")
         seller = product.get("source")
 
         # Parse numeric price
-        if isinstance(price, str) and "₹" in price:
-            match = re.search(r'[\d,.]+', price)
-            price_val = float(match.group().replace(",", "")) if match else 0.0
-        else:
-            price_val = 0.0
+        price_val = 0.0
+        if isinstance(price, str):
+            # Extract all prices in case it's a range
+            matches = re.findall(r'[\d,]+', price)
+            if matches:
+                price_val = float(matches[0].replace(",", ""))  # Use the *lowest* price
 
+        print(f"Parsed Price: {price_val}")
         if price_val <= max_price:
+            print("✅ Added")
             filtered.append({
                 "title": title,
                 "price": price,
                 "link": link,
                 "seller": seller
             })
+        else:
+            print("❌ Skipped, too expensive.")
 
     if not filtered:
         print("No products found within the price range.")
@@ -52,7 +60,7 @@ def filter_products(results, max_price):
 
 def save_results_to_json(data):
     os.makedirs('data', exist_ok=True)  # Ensure 'data' folder exists
-    with open('data/api_results.json', 'w') as f:
+    with open('data/api_results.json', 'w', encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
 def main():
@@ -72,5 +80,6 @@ def main():
         else:
             print(f"No products found for {product}")
 
-# Run the scraper
-main()
+if __name__ == "__main__":
+    main()
+
